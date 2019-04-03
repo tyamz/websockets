@@ -2,8 +2,12 @@ $(() => {
     var socket = null;
     var name = '';
 
-    function tag() {
+    var tag = () => {
         console.log(name);
+    }
+
+    var scrollToBottom = () => {
+        $('html, body').animate({scrollTop:$(document).height()}, 'slow');
     }
 
     var connect = () => {
@@ -12,26 +16,44 @@ $(() => {
         socket.onopen = (e) => {
             console.log(e);
             $('#connect-button').hide();
-            $('#name').hide();
+            $('#name-box').hide();
             $('#send-button').show();
-            $('#message').show();
+            $('#disconnect-button').show();
+            $('#message-box').show();
+            $('#alert').hide();
         };
         socket.onclose = (e) => {
             console.log(e);
+            $('#connect-button').show();
+            $('#name-box').show();
+            $('#send-button').hide();
+            $('#disconnect-button').hide();
+            $('#message-box').hide();
         };
         socket.onmessage = (e) => {
             var data = JSON.parse(e.data);
-            $('#chatbox').append('<div class="card mb-2' + (data.private ? ' border-secondary' : '') + '"><div class="card-body"><h5 class="card-title text-primary name">' + data.name + '</h5>' + (data.private ? ' <small class="text-muted">private</small>' : '') + '<p class="card-text' + (data.private ? ' text-secondary' : '') + '">' + data.message + '</p></div></div>');
+            if(data.error) {
+                $('#alert').html(data.message).show();
+            } else {
+                $('#alert').hide();
+                $('#chatbox').append('<div class="card my-1' + (data.private ? ' border-secondary' : '') + '"><div class="card-body"><h5 class="card-title text-info name">' + data.name + '</h5>' + (data.private ? ' <small class="text-muted">private</small>' : '') + '<p class="card-text' + (data.private ? ' text-secondary' : '') + '">' + data.message + '</p></div></div>');
+            }
+            scrollToBottom();
         };
         socket.onerror = (e) => {
             console.log(e);
         };
     }
 
+    var disconnect = () => {
+        socket.close(1000, "Closing.");
+    }
+
     var send = (message) => {
         $('#message').val('');
-        $('#chatbox').append('<div class="card mb-2"><div class="card-body"><h5 class="card-title">' + name + '</h5><p class="card-text">' + message + '</p></div></div>');
+        $('#chatbox').append('<div class="card my-1"><div class="card-body"><h5 class="card-title">' + name + '</h5><p class="card-text">' + message + '</p></div></div>');
         socket.send(message);
+        scrollToBottom();
     }
 
     $('#send-button').click(() => {
@@ -41,6 +63,23 @@ $(() => {
     $('#connect-button').click(() => {
         connect();
     });
+
+    $('#disconnect-button').click(() => {
+        disconnect();
+    });
+
+    $('#message').on('keypress', function (e) {
+        if(e.which === 13) {
+            e.preventDefault();
+            //Disable textbox to prevent multiple submit
+            $(this).attr("disabled", "disabled");
+
+            send($('#message').val());
+
+            //Enable the textbox again if needed.
+            $(this).removeAttr("disabled");
+        }
+   });
 
     $('#chatbox').on('click', '.name', function() {
         var message = $('#message').val();
