@@ -12,7 +12,7 @@ $(() => {
 
     var connect = () => {
         name = $('#name').val();
-        socket = new WebSocket('ws://206.189.235.182:8080/?name=' + name);
+        socket = new WebSocket('ws://localhost:8080/?name=' + name);
         socket.onopen = (e) => {
             console.log(e);
             $('#connect-button').hide();
